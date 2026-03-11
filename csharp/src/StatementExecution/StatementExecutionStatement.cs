@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AdbcDrivers.Databricks;
 using AdbcDrivers.Databricks.Reader.CloudFetch;
 using AdbcDrivers.Databricks.StatementExecution.MetadataCommands;
 using AdbcDrivers.Databricks.Result;
@@ -64,6 +65,9 @@ namespace AdbcDrivers.Databricks.StatementExecution
 
         // HTTP client for CloudFetch downloads
         private readonly HttpClient _httpClient;
+
+        // Complex type configuration
+        private readonly bool _enableComplexDatatypeSupport;
 
         // Connection reference for metadata queries
         private readonly StatementExecutionConnection _connection;
@@ -119,6 +123,7 @@ namespace AdbcDrivers.Databricks.StatementExecution
             _recyclableMemoryStreamManager = recyclableMemoryStreamManager ?? throw new ArgumentNullException(nameof(recyclableMemoryStreamManager));
             _lz4BufferPool = lz4BufferPool ?? throw new ArgumentNullException(nameof(lz4BufferPool));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _enableComplexDatatypeSupport = connection.EnableComplexDatatypeSupport;
         }
 
         /// <summary>
@@ -279,6 +284,13 @@ namespace AdbcDrivers.Databricks.StatementExecution
 
             // Create appropriate reader based on result disposition
             IArrowArrayStream reader = CreateReader(response, cancellationToken);
+
+            // When EnableComplexDatatypeSupport=false (default), serialize complex Arrow types to JSON strings
+            // so that SEA behavior matches Thrift (which sets ComplexTypesAsArrow=false).
+            if (!_enableComplexDatatypeSupport)
+            {
+                reader = new ComplexTypeSerializingStream(reader);
+            }
 
             // Get schema from reader
             var schema = reader.Schema;
