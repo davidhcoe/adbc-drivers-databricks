@@ -51,6 +51,7 @@ namespace AdbcDrivers.Databricks
     internal class DatabricksConnection : SparkHttpConnection
     {
         internal const string DatabricksDriverName = "ADBC Databricks Driver";
+        internal const string DriverVersion = "1.1.0";
         internal static new readonly string s_assemblyName = ApacheUtility.GetAssemblyName(typeof(DatabricksConnection));
         internal static new readonly string s_assemblyVersion = ApacheUtility.GetAssemblyVersion(typeof(DatabricksConnection));
 
@@ -441,6 +442,7 @@ namespace AdbcDrivers.Databricks
         protected override bool GetObjectsPatternsRequireLowerCase => true;
 
         protected override string DriverName => DatabricksDriverName;
+        protected override string ProductVersionDefault => DriverVersion;
 
         /// <summary>
         /// Overrides GetObjects to emit telemetry with appropriate operation type based on depth.
